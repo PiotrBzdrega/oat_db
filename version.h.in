@@ -1,0 +1,4 @@
+// the configured options and settings for selkie-supervisor
+#define OAT_DB_VERSION_MAJOR @oat_db_VERSION_MAJOR@
+#define OAT_DB_VERSION_MINOR @oat_db_VERSION_MINOR@
+#define OAT_DB_VERSION_PATCH @oat_db_VERSION_PATCH@
