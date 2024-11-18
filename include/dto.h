@@ -5,8 +5,8 @@
  * In oatpp DTOs are used in ObjectMapping and Serialization/Deserialization.
  */ 
 
-#include "oatpp/macro/codegen.hpp"
-#include "oatpp/Types.hpp"
+#include "oatpp/core/macro/codegen.hpp"
+#include "oatpp/core/data/mapping/type/Object.hpp"
 
 #include OATPP_CODEGEN_BEGIN(DTO)
 

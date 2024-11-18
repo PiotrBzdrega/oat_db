@@ -33,7 +33,7 @@ void run()
     oatpp::network::Server server(connectionProvider, connectionHandler);
 
     /* Print info about server port */
-    OATPP_LOGi("MyApp", "Server running on port {}", connectionProvider->getProperty("port").toString());
+    OATPP_LOGI("MyApp", "Server running on port %s", connectionProvider->getProperty("port").getData());
 
     /* Run server */
     server.run();
@@ -43,13 +43,13 @@ void run()
 int main() {
 
     /* Init oatpp Environment */
-    oatpp::Environment::init();
+    oatpp::base::Environment::init();
 
     /* Run App */
     run();
 
     /* Destroy oatpp Environment */
-    oatpp::Environment::destroy();
+    oatpp::base::Environment::destroy();
 
     return 0;
 

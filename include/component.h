@@ -7,12 +7,12 @@
  */ 
 
 #include "oatpp/web/server/HttpConnectionHandler.hpp"
-#include "oatpp/web/mime/ContentMappers.hpp"
+// #include "oatpp/web/mime/ContentMappers.hpp"
 
 #include "oatpp/network/tcp/server/ConnectionProvider.hpp"
-#include "oatpp/json/ObjectMapper.hpp"
+#include "oatpp/parser/json/mapping/ObjectMapper.hpp"
 
-#include "oatpp/macro/component.hpp"
+#include "oatpp/core/macro/component.hpp"
 
 /**
  *  Class which creates and holds Application components and registers components in oatpp::base::Environment
@@ -46,16 +46,8 @@ public:
   /**
    *  Create ObjectMapper component to serialize/deserialize DTOs in Contoller's API
    */
-  OATPP_CREATE_COMPONENT(std::shared_ptr<oatpp::web::mime::ContentMappers>, apiContentMappers)([] {
-
-    auto json = std::make_shared<oatpp::json::ObjectMapper>();
-    json->serializerConfig().json.useBeautifier = true;
-
-    auto mappers = std::make_shared<oatpp::web::mime::ContentMappers>();
-    mappers->putMapper(json);
-
-    return mappers;
-
+  OATPP_CREATE_COMPONENT(std::shared_ptr<oatpp::data::mapping::ObjectMapper>, apiObjectMapper)([] {
+    return oatpp::parser::json::mapping::ObjectMapper::createShared();
   }());
 
 };

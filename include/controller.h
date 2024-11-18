@@ -7,8 +7,8 @@
 #include "dto.h"
 
 #include "oatpp/web/server/api/ApiController.hpp"
-#include "oatpp/macro/codegen.hpp"
-#include "oatpp/macro/component.hpp"
+#include "oatpp/core/macro/codegen.hpp"
+#include "oatpp/core/macro/component.hpp"
 
 #include OATPP_CODEGEN_BEGIN(ApiController) //<-- Begin Codegen
 
@@ -21,8 +21,8 @@ public:
    * Constructor with object mapper.
    * @param apiContentMappers - mappers used to serialize/deserialize DTOs.
    */
-  controller(OATPP_COMPONENT(std::shared_ptr<oatpp::web::mime::ContentMappers>, apiContentMappers))
-    : oatpp::web::server::api::ApiController(apiContentMappers)
+  controller(OATPP_COMPONENT(std::shared_ptr<ObjectMapper>, objectMapper))
+    : oatpp::web::server::api::ApiController(objectMapper)
   {}
 public:
   
