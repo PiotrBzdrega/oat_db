@@ -12,7 +12,7 @@ include_directories(include)
 # Specify the directory containing your source files
 file(GLOB SOURCES "src/*.cpp")
 
-find_package(oatpp  1.3.0 REQUIRED)
+find_package(oatpp  1.3.0-latest REQUIRED)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 target_include_directories(${PROJECT_NAME} PUBLIC "${PROJECT_BINARY_DIR}" )
