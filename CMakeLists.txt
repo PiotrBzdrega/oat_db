@@ -13,10 +13,11 @@ include_directories(include)
 file(GLOB SOURCES "src/*.cpp")
 
 find_package(oatpp  1.3.0 REQUIRED)
+find_package(OpenSSL REQUIRED)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 target_include_directories(${PROJECT_NAME} PUBLIC "${PROJECT_BINARY_DIR}" )
 
-target_link_libraries(${PROJECT_NAME} PUBLIC oatpp::oatpp) #PUBLIC oatpp::oatpp-test
+target_link_libraries(${PROJECT_NAME} PUBLIC oatpp::oatpp ssl crypto) #PUBLIC oatpp::oatpp-test
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20 -Wall -Wextra -Wpedantic") # TODO: append -s -Q --help=warning

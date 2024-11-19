@@ -6,6 +6,7 @@
 #include <iostream>
 #include "component.h"
 #include "controller.h"
+#include "ssl.h"
 
 #include "oatpp/web/server/HttpConnectionHandler.hpp"
 
@@ -41,6 +42,8 @@ void run()
 }
 
 int main() {
+
+    sha("adam");
 
     /* Init oatpp Environment */
     oatpp::base::Environment::init();

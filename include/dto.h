@@ -7,6 +7,8 @@
 
 #include "oatpp/core/macro/codegen.hpp"
 #include "oatpp/core/data/mapping/type/Object.hpp"
+#include "oatpp/core/Types.hpp"
+
 
 #include OATPP_CODEGEN_BEGIN(DTO)
 
@@ -20,6 +22,14 @@ class dto : public oatpp::DTO {
   
   DTO_FIELD(Int32, statusCode);
   DTO_FIELD(String, message);
+  
+};
+
+class token_dto : public oatpp::DTO {
+  
+  DTO_INIT(token_dto, DTO)
+
+  DTO_FIELD(String, token);
   
 };
 
