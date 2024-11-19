@@ -21,3 +21,10 @@ target_include_directories(${PROJECT_NAME} PUBLIC "${PROJECT_BINARY_DIR}" )
 target_link_libraries(${PROJECT_NAME} PUBLIC oatpp::oatpp ssl crypto) #PUBLIC oatpp::oatpp-test
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20 -Wall -Wextra -Wpedantic") # TODO: append -s -Q --help=warning
+
+
+if(BUILDROOT)
+  add_definitions(-DBUILDROOT)
+  set(CMAKE_INSTALL_PREFIX "/")
+  install(TARGETS oat_db DESTINATION fs0/prg)
+endif(BUILDROOT)
