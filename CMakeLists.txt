@@ -25,6 +25,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20 -Wall -Wextra -Wpedantic") # 
 
 if(BUILDROOT)
   add_definitions(-DBUILDROOT)
-  set(CMAKE_INSTALL_PREFIX "/")
-  install(TARGETS oat_db DESTINATION fs0/prg)
 endif(BUILDROOT)
+
+set(CMAKE_INSTALL_PREFIX "/")
+install(TARGETS oat_db DESTINATION fs0/prg)
