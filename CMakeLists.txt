@@ -23,19 +23,24 @@ target_link_libraries(${PROJECT_NAME} PUBLIC oatpp::oatpp oatpp::oatpp-openssl s
 
 #################################################################
 ## define certificates path
-
-add_definitions(
-        -DCERT_PEM_PATH="${CMAKE_CURRENT_LIST_DIR}/cert/test_key.pem"
-        -DCERT_CRT_PATH="${CMAKE_CURRENT_LIST_DIR}/cert/test_cert.crt"
+if(BUILDROOT)
+  add_definitions(-DBUILDROOT)
+  add_definitions(
+    -DCERT_PEM_PATH="/usr/share/container_api/test_key.pem"
+    -DCERT_CRT_PATH="/usr/share/container_api/test_cert.crt"
 )
+else()
+  add_definitions(
+    -DCERT_PEM_PATH="${CMAKE_CURRENT_LIST_DIR}/cert/test_key.pem"
+    -DCERT_CRT_PATH="${CMAKE_CURRENT_LIST_DIR}/cert/test_cert.crt"
+)
+endif()
 #################################################################
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20 -Wall -Wextra -Wpedantic") # TODO: append -s -Q --help=warning
 
 
-if(BUILDROOT)
-  add_definitions(-DBUILDROOT)
-endif(BUILDROOT)
+
 
 set(CMAKE_INSTALL_PREFIX "/")
 install(TARGETS oat_db DESTINATION fs0/prg)
