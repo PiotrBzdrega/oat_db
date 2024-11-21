@@ -14,6 +14,9 @@
 
 #include "oatpp/core/macro/component.hpp"
 
+#include "oatpp-openssl/server/ConnectionProvider.hpp"
+#include "oatpp-openssl/Config.hpp"
+
 /**
  *  Class which creates and holds Application components and registers components in oatpp::base::Environment
  *  Order of components initialization is from top to bottom
@@ -24,8 +27,19 @@ public:
   /**
    *  Create ConnectionProvider component which listens on the port
    */
+  // OATPP_CREATE_COMPONENT(std::shared_ptr<oatpp::network::ServerConnectionProvider>, serverConnectionProvider)([] {
+  //   return oatpp::network::tcp::server::ConnectionProvider::createShared({/* "0.0.0.0" */"localhost", 8000, oatpp::network::Address::IP_4});
+  // }());
+
+  /* ssl Connection provider */
   OATPP_CREATE_COMPONENT(std::shared_ptr<oatpp::network::ServerConnectionProvider>, serverConnectionProvider)([] {
-    return oatpp::network::tcp::server::ConnectionProvider::createShared({/* "0.0.0.0" */"localhost", 8000, oatpp::network::Address::IP_4});
+    OATPP_LOGD("oatpp::libressl::Config", "pem='%s'", CERT_PEM_PATH);
+    OATPP_LOGD("oatpp::libressl::Config", "crt='%s'", CERT_CRT_PATH);
+
+    auto config = oatpp::openssl::Config::createDefaultServerConfigShared(CERT_CRT_PATH, CERT_PEM_PATH /* private key */);
+
+    return oatpp::openssl::server::ConnectionProvider::createShared(config,{/* "0.0.0.0" */"localhost", 8000, oatpp::network::Address::IP_4});
+
   }());
   
   /**

@@ -45,6 +45,9 @@ int main() {
 
     sha("adam");
 
+
+    
+
     /* Init oatpp Environment */
     oatpp::base::Environment::init();
 

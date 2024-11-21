@@ -13,12 +13,22 @@ include_directories(include)
 file(GLOB SOURCES "src/*.cpp")
 
 find_package(oatpp  1.3.0 REQUIRED)
+find_package(oatpp-openssl 1.3.0 REQUIRED)
 find_package(OpenSSL REQUIRED)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 target_include_directories(${PROJECT_NAME} PUBLIC "${PROJECT_BINARY_DIR}" )
 
-target_link_libraries(${PROJECT_NAME} PUBLIC oatpp::oatpp ssl crypto) #PUBLIC oatpp::oatpp-test
+target_link_libraries(${PROJECT_NAME} PUBLIC oatpp::oatpp oatpp::oatpp-openssl ssl crypto) #PUBLIC oatpp::oatpp-test
+
+#################################################################
+## define certificates path
+
+add_definitions(
+        -DCERT_PEM_PATH="${CMAKE_CURRENT_LIST_DIR}/cert/test_key.pem"
+        -DCERT_CRT_PATH="${CMAKE_CURRENT_LIST_DIR}/cert/test_cert.crt"
+)
+#################################################################
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20 -Wall -Wextra -Wpedantic") # TODO: append -s -Q --help=warning
 
