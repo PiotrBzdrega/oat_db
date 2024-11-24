@@ -6,7 +6,8 @@
 #include <iostream>
 #include "component.h"
 #include "controller.h"
-#include "ssl.h"
+
+#include "config.h"
 
 #include "oatpp/web/server/HttpConnectionHandler.hpp"
 
@@ -15,8 +16,11 @@
 
 void run()
 {
+
+    OATPP_LOGI("MyApp", "Server running on port %d %d\n", mik::config::use_tls(), mik::config::get_port());
+
     /* Register Components in scope of run() method */
-    component components;
+    component components(mik::config::use_tls(),mik::config::get_port());
 
     /* Get router component */
     OATPP_COMPONENT(std::shared_ptr<oatpp::web::server::HttpRouter>, router);
@@ -27,8 +31,9 @@ void run()
     /* Get connection handler component */
     OATPP_COMPONENT(std::shared_ptr<oatpp::network::ConnectionHandler>, connectionHandler);
 
+    /* TODO: create it dynamically */
     /* Get connection provider component */
-    OATPP_COMPONENT(std::shared_ptr<oatpp::network::ServerConnectionProvider>, connectionProvider);
+    OATPP_COMPONENT(std::shared_ptr<oatpp::network::ServerConnectionProvider>, connectionProvider, mik::config::use_tls() ? "https" : "http");
 
     /* Create server which takes provided TCP connections and passes them to HTTP connection handler */
     oatpp::network::Server server(connectionProvider, connectionHandler);
@@ -38,18 +43,24 @@ void run()
 
     /* Run server */
     server.run();
-
 }
 
 int main() {
 
-    sha("adam");
+    /* Init oatpp Environment */
+    oatpp::base::Environment::init();
+
+    /* Read configuration file */
+    mik::config::read();
+
+
+
+
 
 
     
 
-    /* Init oatpp Environment */
-    oatpp::base::Environment::init();
+
 
     /* Run App */
     run();

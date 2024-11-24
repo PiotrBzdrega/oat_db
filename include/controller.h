@@ -6,6 +6,7 @@
 
 #include "dto.h"
 #include "auth_handler.h"
+#include "db_handler.h"
 
 #include "oatpp/web/server/api/ApiController.hpp"
 #include "oatpp/core/macro/codegen.hpp"
@@ -17,78 +18,82 @@
 /**
  * Sample Api Controller.
  */
-class controller : public oatpp::web::server::api::ApiController {
+class controller : public oatpp::web::server::api::ApiController
+{
 private:
-  std::shared_ptr<AuthorizationHandler> m_authHandler = std::make_shared<MyBearerAuthorizationHandler>();
+    std::shared_ptr<AuthorizationHandler> m_authHandler = std::make_shared<MyBearerAuthorizationHandler>();
 public:
-  /**
-   * Constructor with object mapper.
-   * @param apiContentMappers - mappers used to serialize/deserialize DTOs.
-   */
-  controller(OATPP_COMPONENT(std::shared_ptr<ObjectMapper>, objectMapper))
-    : oatpp::web::server::api::ApiController(objectMapper)
-  {
-    // setDefaultAuthorizationHandler(std::make_shared<MyBearerAuthorizationHandler>("my-realm"));
+    /**
+     * Constructor with object mapper.
+     * @param apiContentMappers - mappers used to serialize/deserialize DTOs.
+     */
+    controller(OATPP_COMPONENT(std::shared_ptr<ObjectMapper>, objectMapper))
+        : oatpp::web::server::api::ApiController(objectMapper)
+    {
+        // setDefaultAuthorizationHandler(std::make_shared<MyBearerAuthorizationHandler>("my-realm"));
+    }
 
-  }
 public:
-  
-  /* curl http://localhost:8000 */
+    /* curl http://localhost:8000 */
 
-  ENDPOINT("GET", "/", root) {
-    auto dto = dto::createShared();
-    dto->statusCode = 200;
-    dto->message = "Hello World!";
-    return createDtoResponse(Status::CODE_200, dto);
-  }
-  
-/* curl -X POST http://localhost:8000/ctrl */
+    ENDPOINT("GET", "/", root)
+    {
+        mik::db_handler::get_channel("adamek");
+        auto dto = dto::createShared();
+        dto->statusCode = 200;
+        dto->message = "Hello World!";
+        return createDtoResponse(Status::CODE_200, dto);
+    }
 
-  ENDPOINT("POST", "/ctrl", control) {
-    auto dto = dto::createShared();
-    dto->statusCode = 200;
-    dto->message = "adam!";
-    return createDtoResponse(Status::CODE_200, dto);
-  }
-  
-/* 
-    curl -X POST http://localhost:8000/users \
-     -H "User-Agent: MyTestClient/1.0" \
-     -H "Authorization: Bearer 4e99e8c12de7e01535248d2bac85e732" \
-     -H "Content-Type: text/plain" \
-     -d "This is a test payload"
- */
+    /* curl -X POST http://localhost:8000/ctrl */
 
-  ENDPOINT("POST", "/users", users,
-  HEADER(oatpp::String,userAgent,"User-Agent"),
-  HEADER(oatpp::String,userAuth,"Authorization"),
-  HEADER(oatpp::String,contType,"Content-Type"),
-  BODY_STRING(oatpp::String, userInfo),
-  AUTHORIZATION(std::shared_ptr<BearerAuthorizationObject>, authObject,m_authHandler))  {
-    OATPP_ASSERT_HTTP(authObject->token == "4e99e8c12de7e01535248d2bac85e732", Status::CODE_401, "Unauthorized");
-    OATPP_LOGD("Test","header='%s\t%s\t%s' body='%s'", userAgent->c_str(), userAuth->c_str(),contType->c_str(),userInfo->c_str());
-    return createResponse(Status::CODE_200, "OK");
-  }
+    ENDPOINT("POST", "/ctrl", control)
+    {
+        auto dto = dto::createShared();
+        dto->statusCode = 200;
+        dto->message = "adam!";
+        return createDtoResponse(Status::CODE_200, dto);
+    }
 
+    /*
+        curl -X POST http://localhost:8000/users \
+         -H "User-Agent: MyTestClient/1.0" \
+         -H "Authorization: Bearer 4e99e8c12de7e01535248d2bac85e732" \
+         -H "Content-Type: text/plain" \
+         -d "This is a test payload"
+     */
 
-  // ENDPOINT("POST", "/token", process_token,
-  //         BODY_DTO(dto::ObjectWrapper, requestDto)) 
-  // {
-  //   if (requestDto->token && requestDto->token == "asfsdg45t34ef45tge")
-  //   {
-  //     auto responseDto = dto::createShared();
-  //     responseDto->statusCode = 200;
-  //     responseDto->message = "Token is valid!";
-  //     return createDtoResponse(Status::CODE_200, responseDto);
-  //   }
-          
-  //   auto error_dto = dto::createShared();
-  //   error_dto->statusCode = 400;
-  //   error_dto->message = "Invalid Token";
-  //   return createDtoResponse(Status::CODE_200, error_dto);
-  // }
+    ENDPOINT("POST", "/users", users,
+             HEADER(oatpp::String, userAgent, "User-Agent"),
+             HEADER(oatpp::String, userAuth, "Authorization"),
+             HEADER(oatpp::String, contType, "Content-Type"),
+             BODY_STRING(oatpp::String, userInfo),
+             AUTHORIZATION(std::shared_ptr<BearerAuthorizationObject>, authObject, m_authHandler))
+    {
+        OATPP_ASSERT_HTTP(authObject->token == "4e99e8c12de7e01535248d2bac85e732", Status::CODE_401, "Unauthorized");
+        OATPP_LOGD("Test", "header='%s\t%s\t%s' body='%s'", userAgent->c_str(), userAuth->c_str(), contType->c_str(), userInfo->c_str());
+        return createResponse(Status::CODE_200, "OK");
+    }
 
+    // ENDPOINT("POST", "/token", process_token,
+    //         BODY_DTO(dto::ObjectWrapper, requestDto))
+    // {
+    //   if (requestDto->token && requestDto->token == "asfsdg45t34ef45tge")
+    //   {
+    //     auto responseDto = dto::createShared();
+    //     responseDto->statusCode = 200;
+    //     responseDto->message = "Token is valid!";
+    //     return createDtoResponse(Status::CODE_200, responseDto);
+    //   }
 
+    //   auto error_dto = dto::createShared();
+    //   error_dto->statusCode = 400;
+    //   error_dto->message = "Invalid Token";
+    //   return createDtoResponse(Status::CODE_200, error_dto);
+    // }
 };
 
 #include OATPP_CODEGEN_END(ApiController) //<-- End Codegen
+
+#include "ssl.h"
+

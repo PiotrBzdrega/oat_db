@@ -66,6 +66,10 @@
         "thread": "cpp",
         "cinttypes": "cpp",
         "typeinfo": "cpp",
-        "variant": "cpp"
-    }
+        "variant": "cpp",
+        "codecvt": "cpp",
+        "source_location": "cpp",
+        "fstream": "cpp"
+    },
+    "editor.formatOnPaste": true
 }

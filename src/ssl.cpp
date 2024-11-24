@@ -9,7 +9,7 @@ void handleErrors() {
     abort();
 }
 
-void sha(const char* input)
+void sha(const char* input,uint8_t *hash)
 {
     OSSL_LIB_CTX *library_context;
     int ret = 0;
