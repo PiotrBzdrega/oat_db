@@ -1,2 +1,3 @@
 #pragma once
-void sha(const char*,uint8_t*);
+
+void sha(const char *, uint8_t*);

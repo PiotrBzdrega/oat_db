@@ -2,14 +2,13 @@
 #include <openssl/err.h>
 #include <cstdio>
 #include <string.h>
-#include <memory>
 
 void handleErrors() {
     ERR_print_errors_fp(stderr);
     abort();
 }
 
-void sha(const char* input,uint8_t *hash)
+void sha(const char *input, uint8_t *hash)
 {
     OSSL_LIB_CTX *library_context;
     int ret = 0;
@@ -19,6 +18,7 @@ void sha(const char* input,uint8_t *hash)
     unsigned int digest_length;
     unsigned char *digest_value = NULL;
     unsigned int j;
+    size_t offset = 0; // Keep track of where to write in the hash buffer
 
     // //TODO: add deleter
     // auto file = std::unique_ptr<FILE>(
@@ -53,6 +53,12 @@ void sha(const char* input,uint8_t *hash)
         fprintf(stderr, "EVP_MD_get_size returned invalid size.\n");
         goto cleanup;
     }
+
+    // if (hash_length <= digest_length)
+    // {
+    //     fprintf(stderr, "hash_length %d buffer is to small for digest_length %d\n", hash_length, digest_length);
+    //     goto cleanup;
+    // }
 
     digest_value =(unsigned char*) OPENSSL_malloc(digest_length);
     if (digest_value == NULL) {
@@ -92,10 +98,19 @@ void sha(const char* input,uint8_t *hash)
         fprintf(stderr, "EVP_DigestFinal() failed.\n");
         goto cleanup;
     }
+    // fprintf(stdout, "digest %s length %d \n", digest_value, digest_length);
+
     for (j=0; j<digest_length; j++)  {
-        fprintf(stdout, "%02x", digest_value[j]);
+        // fprintf(stdout, "%02x", digest_value[j]);
+
+        /* write down as hex */
+        offset += snprintf((char *)hash + offset, (digest_length * 2)+ 1 - offset, "%02x", digest_value[j]);
     }
-    fprintf(stdout, "\n");
+    // fprintf(stdout, "\n");
+
+    // fprintf(stdout, "offset:%ld\n",offset);
+    
+    // hash[offset] = '\0'; //ps. caller responsible for nullptr
     // /* Check digest_value against the known answer */
     // if ((size_t)digest_length != sizeof(known_answer)) {
     //     fprintf(stdout, "Digest length(%d) not equal to known answer length(%lu).\n",

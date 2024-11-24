@@ -7,8 +7,6 @@ namespace mik
 {
     struct db_handler
     {
-        static uint8_t get_channel(std::string_view token);
+        static int get_channel(std::string_view token);
     };
-    
-
 }

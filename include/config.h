@@ -17,8 +17,7 @@ namespace mik
         static bool read(); // TODO: assure to be called only once
         static bool use_tls() { return _tls; }
         static uint16_t get_port() { return _port; }
-        // config(/* args */);
-        // ~config();
+        static int match_channel_to_hash(unsigned char *hash, size_t hash_size);
     };
 }
 

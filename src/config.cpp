@@ -9,8 +9,9 @@
 #include <limits>
 #include <algorithm> // std::find
 #include <charconv>  // std::from_chars
+#include <cstring>
 
-#include "oatpp/core/base/Environment.hpp"
+#include "oatpp/core/base/Environment.hpp" //provide log
 
 constexpr auto cfgName = "container_api.cfg";
 
@@ -34,12 +35,12 @@ bool mik::config::read()
         {"port", [](std::string_view val)
          {
             validate_attribute(val, _port, static_cast<decltype(_port)>(1), static_cast<decltype(_port)>(std::numeric_limits<decltype(_port)>::max()));
-            OATPP_LOGI(std::source_location::current().file_name() + std::source_location::current().line(), "Server port from configuration : %d \n", _port);
+            OATPP_LOGI(std::source_location::current().file_name() + std::source_location::current().line(), "Server port from configuration : %d", _port);
          }},
         {"tls", [](std::string_view val)
          {
             _tls = val == "True" ? true : false;
-            OATPP_LOGI(std::source_location::current().file_name() + std::source_location::current().line(), "TLS is: %s \n", _tls ? "enabled" : "disalbed");
+            OATPP_LOGI(std::source_location::current().file_name() + std::source_location::current().line(), "TLS is: %s", _tls ? "enabled" : "disalbed");
          }},
         {"token", [](std::string_view val)
         {
@@ -58,7 +59,7 @@ bool mik::config::read()
             _mapping.emplace_back(channel, hash);
 
             //TODO:: logs do not work
-            OATPP_LOGI(std::source_location::current().file_name() + std::source_location::current().line(), "New token hash:%s for channel %d\n", hash.data(), channel);
+            OATPP_LOGI(std::source_location::current().file_name() + std::source_location::current().line(), "New token hash:%s for channel %d", hash.data(), channel);
          }}
 
     };
@@ -143,4 +144,22 @@ bool mik::config::read()
         }
 
     return true;
+}
+
+int mik::config::match_channel_to_hash(unsigned char *hash,size_t hash_size)
+{
+    auto it = std::find_if(_mapping.begin(),_mapping.end(),[hash, hash_size](const auto& pair)
+    {
+        return 
+        hash_size == pair.second.size() 
+        && 
+        (std::memcmp(hash, pair.second.data(), pair.second.size()) == 0);
+    });
+
+    if (it != _mapping.end())
+    {
+        return it->first;
+    }
+    
+    return -1;
 }
