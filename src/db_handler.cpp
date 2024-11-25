@@ -95,7 +95,7 @@ int mik::db_handler::baza_b(int chnlNo, int index, unsigned char *tableReadBin, 
         int rc = baza_odczyt(&B);
         if (rc)
         {
-            print("READBIN %s rc=%d\n", __FUNCTION__, rc);
+            std::printf("READBIN %s rc=%d\n", __FUNCTION__, rc);
             return -2;
         }
         if (B.LiczbaObiektow > 0)
