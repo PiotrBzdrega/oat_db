@@ -45,6 +45,38 @@ public:
         return createDtoResponse(Status::CODE_200, dto);
     }
 
+    /* 
+        curl https://localhost:8000/read=sfjd -k \
+        -H "Authorization: adamek" 
+    */
+
+    /*
+        curl https://localhost:8000/read/=sfjd -k \
+        -H "Authorization: adamek"
+    */
+
+    /*
+        curl "https://localhost:8000/read/b0(10),a1(4)" -k \
+        -H "Authorization: adamek"
+    */
+
+    ENDPOINT("GET", "/read/{content}", read,
+             PATH(oatpp::String, content),
+             HEADER(oatpp::String, token, "Authorization"))
+    {
+        OATPP_LOGD("db?read", "token='%s' content1='%s'", token->c_str(), content->c_str());
+        auto ch = mik::db_handler::get_channel(token->c_str());
+        OATPP_LOGD("db?read", "channel='%d'", ch);
+
+        char* query = strdup(content->c_str());
+        mik::db_handler::read(query);
+        free(query);
+        auto dto = dto::createShared();
+        dto->statusCode = 200;
+        dto->message = "Hello World!";
+        return createDtoResponse(Status::CODE_200, dto);
+    }
+
     /* curl -X POST http://localhost:8000/ctrl */
 
     ENDPOINT("POST", "/ctrl", control)
@@ -56,12 +88,27 @@ public:
     }
 
     /*
-        curl -X POST http://localhost:8000/users \
+        curl -X POST https://localhost:8000/users -k \
          -H "User-Agent: MyTestClient/1.0" \
          -H "Authorization: Bearer 4e99e8c12de7e01535248d2bac85e732" \
          -H "Content-Type: text/plain" \
-         -d "This is a test payload"
+         -d "This is a test payload" \
+         -k
      */
+
+    /*
+    curl -X POST https://localhost:8000/users -k \
+     -H "User-Agent: MyTestClient/1.0" \
+     -H "Authorization: Bearer 4e99e8c12de7e01535248d2bac85e733" \
+     -H "Content-Type: text/plain" \
+     -d "This is a test payload"
+    */
+
+    /*
+    curl -X POST https://localhost:8000/users -k \
+     -H "Authorization: Bearer 4e99e8c12de7e01535248d2bac85e732" \
+     -d "This is a test payload"
+    */
 
     ENDPOINT("POST", "/users", users,
              HEADER(oatpp::String, userAgent, "User-Agent"),

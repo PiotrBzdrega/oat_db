@@ -6,10 +6,19 @@
 
 namespace mik
 {
+    struct container
+    {
+        container(std::string_view hash, int bin_out, int anl_out) : hash(hash), bin_out(bin_out), anl_out(anl_out) {}
+        std::string hash;
+        int bin_out;
+        int anl_out;
+    };
+
     class config
     {
     private:
-        inline static std::vector<std::pair<uint8_t, std::string>> _mapping;
+        // inline static std::vector<std::pair<uint8_t, std::string>> _mapping;
+        inline static std::vector<std::pair<uint8_t, container>> _mapping;
         inline static bool _tls{};
         inline static uint16_t _port{8000};
 
