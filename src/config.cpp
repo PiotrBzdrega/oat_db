@@ -178,6 +178,23 @@ bool mik::config::read()
     return true;
 }
 
+// std::optional<const std::pair<uint8_t, mik::container> &> mik::config::get_entry_matching_hash(unsigned char *hash, size_t hash_size)
+// {
+
+//     auto it = std::find_if(_mapping.begin(), _mapping.end(), [hash, hash_size](const auto &pair)
+//                            { return 
+//                             hash_size == pair.second.hash.size() 
+//                             &&
+//                             (std::memcmp(hash, pair.second.hash.data(), pair.second.hash.size()) == 0); 
+//                             });
+
+//     if (it != _mapping.end())
+//     {
+//         return *it; // Return reference wrapped in std::optional
+//     }
+//     return std::nullopt; // Return empty optional if no match
+// }
+
 int mik::config::match_channel_to_hash(unsigned char *hash,size_t hash_size)
 {
     // OATPP_LOGE("adam"/* std::source_location::current().file_name() + std::source_location::current().line() */, "hash:%s size:%d", hash, hash_size);

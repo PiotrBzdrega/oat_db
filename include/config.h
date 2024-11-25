@@ -3,6 +3,7 @@
 #include <cstdint> //uint8_t
 #include <string>
 #include <vector>
+#include <optional>
 
 namespace mik
 {
@@ -27,6 +28,7 @@ namespace mik
         static bool use_tls() { return _tls; }
         static uint16_t get_port() { return _port; }
         static int match_channel_to_hash(unsigned char *hash, size_t hash_size);
+        static std::optional<const std::pair<uint8_t, mik::container>&>get_entry_matching_hash(unsigned char *hash, size_t hash_size);
     };
 }
 

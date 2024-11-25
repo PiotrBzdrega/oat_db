@@ -2,6 +2,8 @@
 
 #include <cstdint>
 #include <string_view>
+#include <optional>
+// #include "config.h"
 
 namespace mik 
 {
@@ -15,6 +17,7 @@ namespace mik
     struct db_handler
     {
         static int get_channel(std::string_view token);
+        // static std::optional<const std::pair<uint8_t, mik::container> &> get_container_ref(std::string_view token);
         static void read(char* cmd);
     private:
         static int findLastIndex(char* str, char x);

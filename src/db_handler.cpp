@@ -3,6 +3,13 @@
 #include "config.h"
 #include <cstring>
 
+// extern "C"
+// {
+// #include "bazainterface.h"
+// #include "bazaconvtime.h"
+// #include "dnpmacros.h"
+// }
+
 #include <source_location>
 #include "oatpp/core/base/Environment.hpp" //provide logs
 
@@ -19,13 +26,34 @@ int mik::db_handler::get_channel(std::string_view token)
     return ch;
 }
 
+// std::optional<const std::pair<uint8_t, mik::container> &> mik::db_handler::get_container_ref(std::string_view token)
+// {
+//     constexpr auto sha_size = 64;
+//     uint8_t hash[sha_size + 1]{};
+//     sha(token.data(), hash);
+
+//     OATPP_LOGI(std::source_location::current().file_name() + std::source_location::current().line(), "token: %s gives hash: %s", token.data(), hash);
+//     return mik::config::get_entry_matching_hash(hash, sha_size);
+// }
+
 void mik::db_handler::read(char *cmd)
 {
     ParsedRange rangeTable[16];
     // char *command = FindToEnd(query, "=");
+
+    // long *a = calloc(CFG.a > 0 ? CFG.a : 1, 4);
+    // long *f = calloc(CFG.a > 0 ? CFG.a : 1, 1);
+    // long *b = calloc(CFG.b > 0 ? CFG.b : 1, 1);
+
     std::printf("command=%s\n",cmd);
     int rangeCnt = ParseRange(cmd, rangeTable, sizeof(rangeTable) / sizeof(ParsedRange));
-    std::printf("command=%s\n", cmd);
+    // if (rangeCnt == 0)
+    // {
+    //     if (baza_a(CFG.k, 0, a, f, CFG.a) < 0 /*!= CFG.a*/)
+    //         err |= 1 << DB_ANALOG;
+    //     if (baza_b(CFG.k, 0, b, CFG.b) < 0)
+    //         err |= 1 << DB_BINARY;
+    // }
 }
 
 int mik::db_handler::findLastIndex(char *str, char x)
