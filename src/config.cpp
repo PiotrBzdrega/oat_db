@@ -88,10 +88,10 @@ bool mik::config::read()
             // string_view -> decltype(anl)
             validate_attribute(anl_out, anl, static_cast<decltype(anl)>(std::numeric_limits<decltype(anl)>::min()), static_cast<decltype(anl)>(std::numeric_limits<decltype(anl)>::max()));
 
-            auto container=_mapping.emplace_back(ch, mik::container{hash,bin,anl});
+            auto container = _mapping.emplace_back(hash, mik::container{ch, bin, anl});
 
             //TODO:: logs do not work
-            OATPP_LOGI("channel","New token hash:%s for channel:%d; bin:%d; anl:%d", container.second.hash.data(), container.first, container.second.bin_out, container.second.anl_out);
+            OATPP_LOGI("channel", "New token hash:%s for channel:%d; bin:%d; anl:%d", container.first.data(), container.second.channel, container.second.bin_out, container.second.anl_out);
          }}
 
     };
@@ -202,15 +202,31 @@ int mik::config::match_channel_to_hash(unsigned char *hash,size_t hash_size)
     auto it = std::find_if(_mapping.begin(),_mapping.end(),[hash, hash_size](const auto& pair)
     {
         return 
-        hash_size == pair.second.hash.size() 
+        hash_size == pair.first.size() 
         && 
-        (std::memcmp(hash, pair.second.hash.data(), pair.second.hash.size()) == 0);
+        (std::memcmp(hash, pair.first.data(), pair.first.size()) == 0);
     });
 
     if (it != _mapping.end())
     {
-        return it->first;
+        return it->second.channel;
     }
     
     return -1;
+}
+
+std::optional<std::reference_wrapper<const mik::container>> mik::config::get_container_matching_hash(unsigned char *hash, size_t hash_size)
+{
+    auto it = std::find_if(_mapping.begin(), _mapping.end(), [hash, hash_size](const auto &pair)
+                           { return
+                            hash_size == pair.first.size()
+                            &&
+                            (std::memcmp(hash, pair.first.data(), pair.first.size()) == 0);
+                            });
+
+    if (it != _mapping.end())
+    {
+        return (it->second); // Return reference wrapped in std::optional
+    }
+    return std::nullopt; // Return empty optional if no match
 }

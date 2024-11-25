@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <string_view>
 #include <optional>
-// #include "config.h"
+#include "config.h"
 
 namespace mik 
 {
@@ -17,10 +17,12 @@ namespace mik
     struct db_handler
     {
         static int get_channel(std::string_view token);
-        // static std::optional<const std::pair<uint8_t, mik::container> &> get_container_ref(std::string_view token);
-        static void read(char* cmd);
+        static std::optional<std::reference_wrapper<const mik::container>> get_container_ref(std::string_view token);
+        static void read(char *cmd, const std::optional<std::reference_wrapper<const mik::container>> &container_opt);
     private:
-        static int findLastIndex(char* str, char x);
+        static int baza_b(int chnlNo, int index, unsigned char * tableReadBin, int len);
+        static int baza_a(int chnlNo, int index, long *tableReadAnl, unsigned char *tableReadFlg, int len);
+        static int findLastIndex(char *str, char x);
         static char * FindToEnd(char * R, char * znak1);
         static int strtolError (const char* str, char** endptr, int base, int* converted);
         static bool StringIsNumber(char *s);

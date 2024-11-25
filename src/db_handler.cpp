@@ -3,12 +3,12 @@
 #include "config.h"
 #include <cstring>
 
-// extern "C"
-// {
-// #include "bazainterface.h"
-// #include "bazaconvtime.h"
-// #include "dnpmacros.h"
-// }
+extern "C"
+{
+#include "bazainterface.h"
+#include "bazaconvtime.h"
+#include "dnpmacros.h"
+}
 
 #include <source_location>
 #include "oatpp/core/base/Environment.hpp" //provide logs
@@ -26,34 +26,126 @@ int mik::db_handler::get_channel(std::string_view token)
     return ch;
 }
 
-// std::optional<const std::pair<uint8_t, mik::container> &> mik::db_handler::get_container_ref(std::string_view token)
-// {
-//     constexpr auto sha_size = 64;
-//     uint8_t hash[sha_size + 1]{};
-//     sha(token.data(), hash);
+std::optional<std::reference_wrapper<const mik::container>> mik::db_handler::get_container_ref(std::string_view token)
+{
+    constexpr auto sha_size = 64;
+    uint8_t hash[sha_size + 1]{};
+    sha(token.data(), hash);
 
-//     OATPP_LOGI(std::source_location::current().file_name() + std::source_location::current().line(), "token: %s gives hash: %s", token.data(), hash);
-//     return mik::config::get_entry_matching_hash(hash, sha_size);
-// }
+    OATPP_LOGI(std::source_location::current().file_name() + std::source_location::current().line(), "token: %s gives hash: %s", token.data(), hash);
+    return config::get_container_matching_hash(hash, sha_size);
+}
 
-void mik::db_handler::read(char *cmd)
+void mik::db_handler::read(char *cmd, const std::optional<std::reference_wrapper<const mik::container>> &container_opt)
 {
     ParsedRange rangeTable[16];
     // char *command = FindToEnd(query, "=");
 
-    // long *a = calloc(CFG.a > 0 ? CFG.a : 1, 4);
-    // long *f = calloc(CFG.a > 0 ? CFG.a : 1, 1);
-    // long *b = calloc(CFG.b > 0 ? CFG.b : 1, 1);
+    long *a = static_cast<long *>(calloc(container_opt->get().anl_out > 0 ? container_opt->get().anl_out : 1, 4));
+    unsigned char *f = static_cast<unsigned char *>(calloc(container_opt->get().anl_out > 0 ? container_opt->get().anl_out : 1, 1));
+    unsigned char *b = static_cast<unsigned char *>(calloc(container_opt->get().bin_out > 0 ? container_opt->get().bin_out : 1, 1));
 
-    std::printf("command=%s\n",cmd);
+    std::printf("command=%s\t %d\n", cmd, container_opt->get().anl_out);
     int rangeCnt = ParseRange(cmd, rangeTable, sizeof(rangeTable) / sizeof(ParsedRange));
-    // if (rangeCnt == 0)
-    // {
-    //     if (baza_a(CFG.k, 0, a, f, CFG.a) < 0 /*!= CFG.a*/)
-    //         err |= 1 << DB_ANALOG;
-    //     if (baza_b(CFG.k, 0, b, CFG.b) < 0)
-    //         err |= 1 << DB_BINARY;
-    // }
+
+    if (rangeCnt == 0)
+    {
+        if (baza_a(container_opt->get().channel, 0, a, f, container_opt->get().anl_out) < 0 /*!= CFG.a*/)
+            /* err |= 1 << DB_ANALOG */;
+        if (baza_b(container_opt->get().channel, 0, b, container_opt->get().bin_out) < 0)
+            /* err |= 1 << DB_BINARY */;
+    }
+}
+
+int mik::db_handler::baza_b(int chnlNo, int index, unsigned char *tableReadBin, int len)
+{
+    static int myMAX_StOdczyt = 2048;
+    // TODO: MAX_StOdczyt 2048
+    int ret = len;
+    if (!tableReadBin || (len < 0) /*||(len>MAX_StOdczyt)*/)
+        return -1;
+    if (!len)
+        return 0;
+    StanyMASTER B;
+    memset(&B, 0, sizeof(StanyMASTER));
+
+    B.dl = 0;
+    B.NumerKanalu = chnlNo;
+    B.TypObiektu = 1;
+    B.Wariacja = 0;
+    B.Kwalifikator = 0;
+    B.LiczbaObiektow = len;
+    B.IND = 0;
+    B.Indeks = index;
+
+    while (len)
+    {
+        // print("[%s] indeks: %d, liczba: %d, pozostalo: %d, max: %d\n", __FUNCTION__, B.Indeks - index, B.LiczbaObiektow, len, myMAX_StOdczyt);
+        if (len > myMAX_StOdczyt)
+        {
+            B.LiczbaObiektow = myMAX_StOdczyt;
+            len -= myMAX_StOdczyt;
+        }
+        else
+        {
+            B.LiczbaObiektow = len;
+            len = 0;
+        }
+
+        int rc = baza_odczyt(&B);
+        if (rc)
+        {
+            print("READBIN %s rc=%d\n", __FUNCTION__, rc);
+            return -2;
+        }
+        if (B.LiczbaObiektow > 0)
+            memcpy(tableReadBin + B.Indeks - index, B.pStany, B.LiczbaObiektow);
+        B.Indeks += B.LiczbaObiektow;
+    }
+    return ret;
+}
+
+int mik::db_handler::baza_a(int chnlNo, int index, long *tableReadAnl, unsigned char *tableReadFlg, int len)
+{
+    static int myMAX_PomOdczyt = 100;
+    int ret = len;
+    if (!tableReadAnl || !tableReadFlg || (len < 0) /*||(l>MAX_PomOdczyt)*/)
+        return -1;
+    if (!len)
+        return 0;
+    PomiaryMASTER P;
+    memset(&P, 0, sizeof(PomiaryMASTER));
+    P.NumerKanalu = chnlNo;
+    P.TypObiektu = 30;
+    P.Indeks = index;
+    while (len)
+    {
+        // print("[%s] indeks: %d, liczba: %d, pozostalo: %d, max: %d\n", __FUNCTION__, P.Indeks - index, P.LiczbaObiektow, len, myMAX_PomOdczyt);
+        if (len > myMAX_PomOdczyt)
+        {
+            P.LiczbaObiektow = myMAX_PomOdczyt;
+            len -= myMAX_PomOdczyt;
+        }
+        else
+        {
+            P.LiczbaObiektow = len;
+            len = 0;
+        }
+        int rc = baza_odczyt(&P);
+        if (rc)
+        {
+            std::printf("READANL %s rc=%d\n", __FUNCTION__, rc);
+            return -2;
+        }
+        int i;
+        for (i = 0; i < P.LiczbaObiektow; i++)
+        {
+            *tableReadAnl++ = P.pPomiary[i].Wartosc;
+            *tableReadFlg++ = P.pPomiary[i].Flaga;
+        }
+        P.Indeks += P.LiczbaObiektow;
+    }
+    return ret;
 }
 
 int mik::db_handler::findLastIndex(char *str, char x)

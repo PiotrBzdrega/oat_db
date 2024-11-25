@@ -19,7 +19,7 @@ find_package(OpenSSL REQUIRED)
 add_executable(${PROJECT_NAME} ${SOURCES})
 target_include_directories(${PROJECT_NAME} PUBLIC "${PROJECT_BINARY_DIR}" )
 
-target_link_libraries(${PROJECT_NAME} PUBLIC oatpp::oatpp oatpp::oatpp-openssl ssl crypto) #PUBLIC oatpp::oatpp-test
+target_link_libraries(${PROJECT_NAME} PUBLIC oatpp::oatpp oatpp::oatpp-openssl ssl crypto kfunctions) #PUBLIC oatpp::oatpp-test
 
 #################################################################
 ## define certificates path

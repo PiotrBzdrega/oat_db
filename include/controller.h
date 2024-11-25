@@ -65,13 +65,13 @@ public:
              HEADER(oatpp::String, token, "Authorization"))
     {
         OATPP_LOGD("db?read", "token='%s' content='%s'", token->c_str(), content->c_str());
-        auto ch = mik::db_handler::get_channel(token->c_str());
-        OATPP_LOGD("db?read", "channel='%d'", ch);
+        // auto ch = mik::db_handler::get_channel(token->c_str());
+        // OATPP_LOGD("db?read", "channel='%d'", ch);
 
-        // auto container_ref = mik::db_handler::get_container_ref(token->c_str());
+        auto container_ref = mik::db_handler::get_container_ref(token->c_str());
 
         char *query = strdup(content->c_str());
-        mik::db_handler::read(query);
+        mik::db_handler::read(query, container_ref);
         free(query);
         auto dto = dto::createShared();
         dto->statusCode = 200;
