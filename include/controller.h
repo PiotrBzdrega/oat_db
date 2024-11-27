@@ -56,22 +56,29 @@ public:
     */
 
     /*
-        curl "https://localhost:8000/read/b0(10),a1(4)" -k \
-        -H "Authorization: adamek"
+        curl "https://localhost:8000/read/b0(10),a1(4)" -k  -H "Authorization: Bearer adamek"
     */
 
     ENDPOINT("GET", "/read/{content}", read,
              PATH(oatpp::String, content),
-             HEADER(oatpp::String, token, "Authorization"))
+            //  HEADER(oatpp::String, token, "Authorization"),
+             AUTHORIZATION(std::shared_ptr<BearerAuthorizationObject>, authObject, m_authHandler))
     {
-        OATPP_LOGD("db?read", "token='%s' content='%s'", token->c_str(), content->c_str());
+        // OATPP_LOGD("db?read", "token='%s' content='%s' auth='%s'", token->c_str(), content->c_str(), authObject->token.get()->c_str());
+        OATPP_LOGD("read", "token='%s' content='%s' ", authObject->token.get()->c_str(), content->c_str());
         // auto ch = mik::db_handler::get_channel(token->c_str());
         // OATPP_LOGD("db?read", "channel='%d'", ch);
 
-        auto container_ref = mik::db_handler::get_container_ref(token->c_str());
+        /* get container reference for matching token */
+        // auto container_ref = mik::db_handler::get_container_ref(token->c_str());
+        auto container_ref = mik::db_handler::get_container_ref(authObject->token.get()->c_str());
+        OATPP_ASSERT_HTTP(container_ref, Status::CODE_401, "Unauthorized");
+
+        std::vector<mik::bin> mik_bin;
+        std::vector<mik::analog> mik_analog;
 
         char *query = strdup(content->c_str());
-        mik::db_handler::read(query, container_ref);
+        mik::db_handler::read(query, container_ref, mik_bin, mik_analog);
         free(query);
         auto dto = dto::createShared();
         dto->statusCode = 200;

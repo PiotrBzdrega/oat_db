@@ -17,7 +17,7 @@ find_package(oatpp-openssl 1.3.0 REQUIRED)
 find_package(OpenSSL REQUIRED)
 
 include_directories(include)
-include_directories(../mms_kfunctions)
+include_directories(../kfunctions)
 include_directories(${CMAKE_SYSROOT}/usr/include/kfunctions)
 
 add_executable(${PROJECT_NAME} ${SOURCES})

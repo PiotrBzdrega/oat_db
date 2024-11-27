@@ -8,8 +8,8 @@
 class BearerAuthorizationObject : public oatpp::web::server::handler::AuthorizationObject
 {
 public:
-    oatpp::String user;
-    oatpp::String password;
+    // oatpp::String user;
+    // oatpp::String password;
     oatpp::String token;
 };
 
@@ -21,18 +21,18 @@ public:
     {
     }
 
-    std::shared_ptr<AuthorizationObject> authorize(const oatpp::String &token) override
-    {
+    // std::shared_ptr<AuthorizationObject> authorize(const oatpp::String &token) override
+    // {
 
-        if (token == "4e99e8c12de7e01535248d2bac85e732")
-        {
-            auto obj = std::make_shared<BearerAuthorizationObject>();
-            obj->user = "foo";
-            obj->password = "bar";
-            obj->token = token;
-            return obj;
-        }
+    //     if (token == "4e99e8c12de7e01535248d2bac85e732")
+    //     {
+    //         auto obj = std::make_shared<BearerAuthorizationObject>();
+    //         obj->user = "foo";
+    //         obj->password = "bar";
+    //         obj->token = token;
+    //         return obj;
+    //     }
 
-        return nullptr;
-    }
+    //     return nullptr;
+    // }
 };

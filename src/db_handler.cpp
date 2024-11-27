@@ -1,6 +1,8 @@
 #include "db_handler.h"
 #include "ssl.h"
 #include "config.h"
+// #include "dto.h" //Data Transfer Object
+
 #include <cstring>
 
 extern "C"
@@ -12,6 +14,26 @@ extern "C"
 
 #include <source_location>
 #include "oatpp/core/base/Environment.hpp" //provide logs
+
+enum
+{
+    DB_OK,
+    DB_ERROR,
+    DB_FIFO,
+    DB_CONF,
+    DB_OPEN,
+    DB_AUTH,
+    DB_HASH,
+    DB_TIMEOUT,
+    DB_CONTROL,
+    DB_BINARY,
+    DB_ANALOG,
+    DB_LOG,
+    DB_CFG,
+    DB_VER,
+    DB_RST,
+    DB_EVENT,
+} error;
 
 int mik::db_handler::get_channel(std::string_view token)
 {
@@ -36,8 +58,11 @@ std::optional<std::reference_wrapper<const mik::container>> mik::db_handler::get
     return config::get_container_matching_hash(hash, sha_size);
 }
 
-void mik::db_handler::read(char *cmd, const std::optional<std::reference_wrapper<const mik::container>> &container_opt)
+bool mik::db_handler::read(char *cmd, const std::optional<std::reference_wrapper<const mik::container>> &container_opt, std::vector<bin> &bin_vect, std::vector<analog> &analog_vect)
 {
+
+    unsigned int err = 0;
+
     ParsedRange rangeTable[16];
     // char *command = FindToEnd(query, "=");
 
@@ -51,10 +76,73 @@ void mik::db_handler::read(char *cmd, const std::optional<std::reference_wrapper
     if (rangeCnt == 0)
     {
         if (baza_a(container_opt->get().channel, 0, a, f, container_opt->get().anl_out) < 0 /*!= CFG.a*/)
-            /* err |= 1 << DB_ANALOG */;
+            err |= 1 << DB_ANALOG;
         if (baza_b(container_opt->get().channel, 0, b, container_opt->get().bin_out) < 0)
-            /* err |= 1 << DB_BINARY */;
+            err |= 1 << DB_BINARY;
     }
+    else
+    {
+        int rngI = 0;
+        ParsedRange *range = rangeTable;
+        for (; rngI < rangeCnt; rngI++, range++)
+        {
+            if (range->isDigital)
+            {
+                size_t lenCor = range->start + range->count <= container_opt->get().bin_out ? range->count : container_opt->get().bin_out - range->start;
+                // print("Reading bin from %d to %d\n", range->start, range->start + lenCor);
+                if (baza_b(container_opt->get().channel, range->start, b + range->start, lenCor) < 0)
+                    err |= 1 << DB_BINARY;
+            }
+            else
+            {
+                size_t lenCor = range->start + range->count <= container_opt->get().anl_out ? range->count : container_opt->get().anl_out - range->start;
+                // print("Reading anl from %d to %d\n", range->start, range->start + lenCor);
+                if (baza_a(container_opt->get().channel, range->start, a + range->start, f + range->start, lenCor) < 0)
+                    err |= 1 << DB_ANALOG;
+            }
+        }
+    }
+
+    if (err)
+    {
+        free(a);
+        free(f);
+        free(b);
+        return false;
+    }
+    else
+    {
+        if (rangeCnt)
+        {
+            int rngI = 0, idxI = 0;
+            ParsedRange *range = rangeTable;
+            for (rngI = 0, range = rangeTable; rngI < rangeCnt; rngI++, range++)
+            {
+                if (range->isDigital)
+                {
+                    size_t lenCor = range->start + range->count <= container_opt->get().bin_out ? range->count : container_opt->get().bin_out - range->start;
+                    for (idxI = range->start; idxI < lenCor + range->start; idxI++)
+                    {
+                        bin_vect.push_back(bin{idxI, b[idxI]});
+                    }
+                }
+                else
+                {
+                    size_t lenCor = range->start + range->count <= container_opt->get().anl_out ? range->count : container_opt->get().anl_out - range->start;
+                }
+            }
+        }
+        
+    }
+    
+
+
+
+    free(a);
+    free(f);
+    free(b);
+
+    return true;
 }
 
 int mik::db_handler::baza_b(int chnlNo, int index, unsigned char *tableReadBin, int len)

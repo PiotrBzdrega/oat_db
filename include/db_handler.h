@@ -7,6 +7,19 @@
 
 namespace mik 
 {
+    struct bin
+    {
+        int index;
+        unsigned char state;
+    };
+
+    struct analog
+    {
+        int index;
+        unsigned char state;
+        float value;
+    };
+
     typedef struct
     {
         size_t start;
@@ -18,7 +31,8 @@ namespace mik
     {
         static int get_channel(std::string_view token);
         static std::optional<std::reference_wrapper<const mik::container>> get_container_ref(std::string_view token);
-        static void read(char *cmd, const std::optional<std::reference_wrapper<const mik::container>> &container_opt);
+        static bool read(char *cmd, const std::optional<std::reference_wrapper<const mik::container>> &container_opt, std::vector<bin> &bin_vect, std::vector<analog> &analog_vect);
+
     private:
         static int baza_b(int chnlNo, int index, unsigned char * tableReadBin, int len);
         static int baza_a(int chnlNo, int index, long *tableReadAnl, unsigned char *tableReadFlg, int len);
