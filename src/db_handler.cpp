@@ -196,148 +196,148 @@ bool mik::db_handler::read(char *cmd, const std::optional<std::reference_wrapper
     return true;
 }
 
-bool mik::db_handler::read2(char *cmd, const std::optional<std::reference_wrapper<const mik::container>> &container_opt, oatpp::Object<read_dto> &dto)
-{
-    OATPP_LOGD("read", "command=%s\t chanel:%d\t bin:%d\t analog:%d\n", cmd, container_opt->get().channel, container_opt->get().bin_out, container_opt->get().anl_out);
-    unsigned int err = 0;
+// bool mik::db_handler::read2(char *cmd, const std::optional<std::reference_wrapper<const mik::container>> &container_opt, oatpp::Object<read_dto> &dto)
+// {
+//     OATPP_LOGD("read", "command=%s\t chanel:%d\t bin:%d\t analog:%d\n", cmd, container_opt->get().channel, container_opt->get().bin_out, container_opt->get().anl_out);
+//     unsigned int err = 0;
 
-    ParsedRange rangeTable[16];
-    // char *command = FindToEnd(query, "=");
+//     ParsedRange rangeTable[16];
+//     // char *command = FindToEnd(query, "=");
 
-    long *a = static_cast<long *>(calloc(container_opt->get().anl_out > 0 ? container_opt->get().anl_out : 1, 4));
-    unsigned char *f = static_cast<unsigned char *>(calloc(container_opt->get().anl_out > 0 ? container_opt->get().anl_out : 1, 1));
-    unsigned char *b = static_cast<unsigned char *>(calloc(container_opt->get().bin_out > 0 ? container_opt->get().bin_out : 1, 1));
+//     long *a = static_cast<long *>(calloc(container_opt->get().anl_out > 0 ? container_opt->get().anl_out : 1, 4));
+//     unsigned char *f = static_cast<unsigned char *>(calloc(container_opt->get().anl_out > 0 ? container_opt->get().anl_out : 1, 1));
+//     unsigned char *b = static_cast<unsigned char *>(calloc(container_opt->get().bin_out > 0 ? container_opt->get().bin_out : 1, 1));
 
-    // std::printf("command=%s\t %d\n", cmd, container_opt->get().anl_out);
-    int rangeCnt = ParseRange(cmd, rangeTable, sizeof(rangeTable) / sizeof(ParsedRange));
+//     // std::printf("command=%s\t %d\n", cmd, container_opt->get().anl_out);
+//     int rangeCnt = ParseRange(cmd, rangeTable, sizeof(rangeTable) / sizeof(ParsedRange));
 
-    if (rangeCnt == 0)
-    {
-        if (baza_a(container_opt->get().channel, 0, a, f, container_opt->get().anl_out) < 0 /*!= CFG.a*/)
-            err |= 1 << DB_ANALOG;
-        if (baza_b(container_opt->get().channel, 0, b, container_opt->get().bin_out) < 0)
-            err |= 1 << DB_BINARY;
-    }
-    else
-    {
-        int rngI = 0;
-        ParsedRange *range = rangeTable;
-        for (; rngI < rangeCnt; rngI++, range++)
-        {
-            if (range->isDigital)
-            {
-                size_t lenCor = range->start + range->count <= container_opt->get().bin_out ? range->count : container_opt->get().bin_out - range->start;
-                // print("Reading bin from %d to %d\n", range->start, range->start + lenCor);
-                if (baza_b(container_opt->get().channel, range->start, b + range->start, lenCor) < 0)
-                    err |= 1 << DB_BINARY;
-            }
-            else
-            {
-                size_t lenCor = range->start + range->count <= container_opt->get().anl_out ? range->count : container_opt->get().anl_out - range->start;
-                // print("Reading anl from %d to %d\n", range->start, range->start + lenCor);
-                if (baza_a(container_opt->get().channel, range->start, a + range->start, f + range->start, lenCor) < 0)
-                    err |= 1 << DB_ANALOG;
-            }
-        }
-    }
+//     if (rangeCnt == 0)
+//     {
+//         if (baza_a(container_opt->get().channel, 0, a, f, container_opt->get().anl_out) < 0 /*!= CFG.a*/)
+//             err |= 1 << DB_ANALOG;
+//         if (baza_b(container_opt->get().channel, 0, b, container_opt->get().bin_out) < 0)
+//             err |= 1 << DB_BINARY;
+//     }
+//     else
+//     {
+//         int rngI = 0;
+//         ParsedRange *range = rangeTable;
+//         for (; rngI < rangeCnt; rngI++, range++)
+//         {
+//             if (range->isDigital)
+//             {
+//                 size_t lenCor = range->start + range->count <= container_opt->get().bin_out ? range->count : container_opt->get().bin_out - range->start;
+//                 // print("Reading bin from %d to %d\n", range->start, range->start + lenCor);
+//                 if (baza_b(container_opt->get().channel, range->start, b + range->start, lenCor) < 0)
+//                     err |= 1 << DB_BINARY;
+//             }
+//             else
+//             {
+//                 size_t lenCor = range->start + range->count <= container_opt->get().anl_out ? range->count : container_opt->get().anl_out - range->start;
+//                 // print("Reading anl from %d to %d\n", range->start, range->start + lenCor);
+//                 if (baza_a(container_opt->get().channel, range->start, a + range->start, f + range->start, lenCor) < 0)
+//                     err |= 1 << DB_ANALOG;
+//             }
+//         }
+//     }
 
-    if (err)
-    {
-        free(a);
-        free(f);
-        free(b);
-        return false;
-    }
-    else
-    {
-        if (rangeCnt)
-        {
-            int rngI = 0, idxI = 0;
-            ParsedRange *range = rangeTable;
-            for (rngI = 0, range = rangeTable; rngI < rangeCnt; rngI++, range++)
-            {
-                if (range->isDigital)
-                {
-                    /* BINARY */
-                    size_t lenCor = range->start + range->count <= container_opt->get().bin_out ? range->count : container_opt->get().bin_out - range->start;
-                    for (idxI = range->start; idxI < lenCor + range->start; idxI++)
-                    {
-                        auto new_bin = bin_dto::createShared();
-                        new_bin->index = idxI;
-                        new_bin->state = b[idxI];
-                        dto->bins->push_back(new_bin);
+//     if (err)
+//     {
+//         free(a);
+//         free(f);
+//         free(b);
+//         return false;
+//     }
+//     else
+//     {
+//         if (rangeCnt)
+//         {
+//             int rngI = 0, idxI = 0;
+//             ParsedRange *range = rangeTable;
+//             for (rngI = 0, range = rangeTable; rngI < rangeCnt; rngI++, range++)
+//             {
+//                 if (range->isDigital)
+//                 {
+//                     /* BINARY */
+//                     size_t lenCor = range->start + range->count <= container_opt->get().bin_out ? range->count : container_opt->get().bin_out - range->start;
+//                     for (idxI = range->start; idxI < lenCor + range->start; idxI++)
+//                     {
+//                         auto new_bin = bin_dto::createShared();
+//                         new_bin->index = idxI;
+//                         new_bin->state = b[idxI];
+//                         dto->bins->push_back(new_bin);
 
-                        dto.get()->bins.get()->push_back()
-                        dto.get()->bins.get()->push_back(bin_dto{idxI, b[idxI]});
+//                         dto.get()->bins.get()->push_back()
+//                         dto.get()->bins.get()->push_back(bin_dto{idxI, b[idxI]});
                         
-                    }
-                }
-                else
-                {
-                    /* ANALOG */
-                    size_t lenCor = range->start + range->count <= container_opt->get().anl_out ? range->count : container_opt->get().anl_out - range->start;
-                    for (idxI = range->start; idxI < lenCor + range->start; idxI++)
-                    {
-                        // TODO: verify if float/int is properly assigned
-                        if (f[idxI] & 0x80)
-                        {
-                            analog_vec.push_back(analog{idxI, f[idxI], *(float *)&a[idxI]});
-                        }
-                        else
-                        {
-                            analog_vec.push_back(analog{idxI, f[idxI], *(int *)&a[idxI]});
-                        }
-                    }
-                }
-            }
-        }
-        else
-        {
-            /* BINARY */
-            for (size_t i = 0; i < container_opt->get().bin_out; i++)
-            {
-                bin_vec.push_back(bin{i, b[i]});
-            }
+//                     }
+//                 }
+//                 else
+//                 {
+//                     /* ANALOG */
+//                     size_t lenCor = range->start + range->count <= container_opt->get().anl_out ? range->count : container_opt->get().anl_out - range->start;
+//                     for (idxI = range->start; idxI < lenCor + range->start; idxI++)
+//                     {
+//                         // TODO: verify if float/int is properly assigned
+//                         if (f[idxI] & 0x80)
+//                         {
+//                             analog_vec.push_back(analog{idxI, f[idxI], *(float *)&a[idxI]});
+//                         }
+//                         else
+//                         {
+//                             analog_vec.push_back(analog{idxI, f[idxI], *(int *)&a[idxI]});
+//                         }
+//                     }
+//                 }
+//             }
+//         }
+//         else
+//         {
+//             /* BINARY */
+//             for (size_t i = 0; i < container_opt->get().bin_out; i++)
+//             {
+//                 bin_vec.push_back(bin{i, b[i]});
+//             }
 
-            /* ANALOG */
-            for (size_t i = 0; i < container_opt->get().anl_out; i++)
-            {
-                // TODO: verify if float/int is properly assigned
-                if (f[i] & 0x80)
-                {
-                    analog_vec.push_back(analog{i, f[i], *(float *)&a[i]});
-                }
-                else
-                {
-                    analog_vec.push_back(analog{i, f[i], *(int *)&a[i]});
-                }
-            }
-        }
-    }
+//             /* ANALOG */
+//             for (size_t i = 0; i < container_opt->get().anl_out; i++)
+//             {
+//                 // TODO: verify if float/int is properly assigned
+//                 if (f[i] & 0x80)
+//                 {
+//                     analog_vec.push_back(analog{i, f[i], *(float *)&a[i]});
+//                 }
+//                 else
+//                 {
+//                     analog_vec.push_back(analog{i, f[i], *(int *)&a[i]});
+//                 }
+//             }
+//         }
+//     }
 
-    OATPP_LOGD("read", "gather data from database");
-    for (const auto &b : bin_vec)
-    {
-        OATPP_LOGD("read", "binary[idx:%d, state:%02x]", b.index, b.state);
-    }
-    for (const auto &a : analog_vec)
-    {
-        if (std::holds_alternative<int>(a.value))
-        {
-            OATPP_LOGD("read", "analog[idx:%d, state:%02x, value:%d]", a.index, a.state, a.value);
-        }
-        else
-        {
-            OATPP_LOGD("read", "analog[idx:%d, state:%02x, value:%.3f]", a.index, a.state, a.value);
-        }
-    }
+//     OATPP_LOGD("read", "gather data from database");
+//     for (const auto &b : bin_vec)
+//     {
+//         OATPP_LOGD("read", "binary[idx:%d, state:%02x]", b.index, b.state);
+//     }
+//     for (const auto &a : analog_vec)
+//     {
+//         if (std::holds_alternative<int>(a.value))
+//         {
+//             OATPP_LOGD("read", "analog[idx:%d, state:%02x, value:%d]", a.index, a.state, a.value);
+//         }
+//         else
+//         {
+//             OATPP_LOGD("read", "analog[idx:%d, state:%02x, value:%.3f]", a.index, a.state, a.value);
+//         }
+//     }
 
-    free(a);
-    free(f);
-    free(b);
+//     free(a);
+//     free(f);
+//     free(b);
 
-    return true;
-}
+//     return true;
+// }
 
 int mik::db_handler::baza_setBin(const char *payload)
 {

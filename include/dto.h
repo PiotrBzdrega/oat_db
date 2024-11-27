@@ -28,6 +28,24 @@ class dto : public oatpp::DTO
     DTO_FIELD(String, message);
 };
 
+class list_dto : public oatpp::DTO
+{
+
+    DTO_INIT(list_dto, DTO)
+
+    DTO_FIELD(List<Object<dto>>, base);
+    DTO_FIELD(String, info);
+};
+
+class vector_dto : public oatpp::DTO
+{
+
+    DTO_INIT(vector_dto, DTO)
+
+    DTO_FIELD(Vector<Object<dto>>, base);
+    DTO_FIELD(String, info);
+};
+
 class token_dto : public oatpp::DTO
 {
 
@@ -68,5 +86,7 @@ class read_dto : public oatpp::DTO
 
     DTO_FIELD(String, info);
 };
+
+
 
 #include OATPP_CODEGEN_END(DTO)

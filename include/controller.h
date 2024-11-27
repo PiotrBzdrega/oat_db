@@ -45,6 +45,50 @@ public:
         return createDtoResponse(Status::CODE_200, dto);
     }
 
+    /* curl https://localhost:8000/listTest */
+
+    ENDPOINT("GET", "/list", listTest)
+    {
+        /* create user */
+        auto sister = dto::createShared();
+        sister->statusCode = 997;
+        sister->message = "Ovsyanochka";
+
+        /* create user */
+        auto brother = dto::createShared();
+        brother->statusCode = 998;
+        brother->message = "Dostojewski";
+
+        auto dto = list_dto::createShared();
+        dto->base = {brother, sister};
+        dto->info = "adam";
+
+        return createDtoResponse(Status::CODE_200, dto);
+    }
+
+    /* curl https://localhost:8000/vectorTest */
+
+    ENDPOINT("GET", "/vector", vectorTest)
+    {
+        /* create user */
+        auto sister = dto::createShared();
+        sister->statusCode = 997;
+        sister->message = "Ovsyanochka";
+
+        /* create user */
+        auto brother = dto::createShared();
+        brother->statusCode = 998;
+        brother->message = "Dostojewski";
+
+        auto dto = vector_dto::createShared();
+        // dto->base = {brother, sister};
+        dto->base = oatpp::Vector<oatpp::Object<dto>>::createShared();
+        dto->base->push_back(BinaryDTO::createShared()->put("statusCode", 5)->put("message", "my message"));
+        dto->info = "adam";
+
+        return createDtoResponse(Status::CODE_200, dto);
+    }
+
     /* 
         curl https://localhost:8000/read=sfjd -k \
         -H "Authorization: adamek" 
@@ -81,9 +125,9 @@ public:
         char *query = strdup(content->c_str());
         mik::db_handler::read(query, container_ref, mik_bin, mik_analog);
 
-        auto read_dto = read_dto::createShared();
+        // auto read_dto = read_dto::createShared();
 
-        mik::db_handler::read2(query, container_ref, read_dto);
+        // mik::db_handler::read2(query, container_ref, read_dto);
 
         free(query);
         auto dto = dto::createShared();
