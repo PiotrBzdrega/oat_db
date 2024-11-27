@@ -3,7 +3,9 @@
 #include <cstdint>
 #include <string_view>
 #include <optional>
+#include <variant>
 #include "config.h"
+#include "dto.h" //Data Transfer Object
 
 namespace mik 
 {
@@ -17,7 +19,7 @@ namespace mik
     {
         int index;
         unsigned char state;
-        float value;
+        std::variant<int, float> value; // Holds either int or float
     };
 
     typedef struct
@@ -32,8 +34,16 @@ namespace mik
         static int get_channel(std::string_view token);
         static std::optional<std::reference_wrapper<const mik::container>> get_container_ref(std::string_view token);
         static bool read(char *cmd, const std::optional<std::reference_wrapper<const mik::container>> &container_opt, std::vector<bin> &bin_vect, std::vector<analog> &analog_vect);
+        static bool read2(char *cmd, const std::optional<std::reference_wrapper<const mik::container>> &container_opt, oatpp::Object<bin> &bin_dto, oatpp::Object<analog> &analog_dto);
+        static bool ctrl_bin(char *cmd, const std::optional<std::reference_wrapper<const mik::container>> &container_opt);
+        static bool ctrl_analog(char *cmd, const std::optional<std::reference_wrapper<const mik::container>> &container_opt);
+        static bool set_bin(char *cmd, const std::optional<std::reference_wrapper<const mik::container>> &container_opt);
+        static bool set_analog(char *cmd, const std::optional<std::reference_wrapper<const mik::container>> &container_opt);
 
     private:
+        static int baza_setBin(const char* payload);
+        static int baza_setAnl(const char* payload);
+        static int baza_c(int k, int i);
         static int baza_b(int chnlNo, int index, unsigned char * tableReadBin, int len);
         static int baza_a(int chnlNo, int index, long *tableReadAnl, unsigned char *tableReadFlg, int len);
         static int findLastIndex(char *str, char x);

@@ -58,9 +58,10 @@ std::optional<std::reference_wrapper<const mik::container>> mik::db_handler::get
     return config::get_container_matching_hash(hash, sha_size);
 }
 
-bool mik::db_handler::read(char *cmd, const std::optional<std::reference_wrapper<const mik::container>> &container_opt, std::vector<bin> &bin_vect, std::vector<analog> &analog_vect)
+bool mik::db_handler::read(char *cmd, const std::optional<std::reference_wrapper<const mik::container>> &container_opt, std::vector<bin> &bin_vec, std::vector<analog> &analog_vec)
 {
 
+    OATPP_LOGD("read", "command=%s\t chanel:%d\t bin:%d\t analog:%d\n", cmd, container_opt->get().channel, container_opt->get().bin_out, container_opt->get().anl_out);
     unsigned int err = 0;
 
     ParsedRange rangeTable[16];
@@ -70,7 +71,7 @@ bool mik::db_handler::read(char *cmd, const std::optional<std::reference_wrapper
     unsigned char *f = static_cast<unsigned char *>(calloc(container_opt->get().anl_out > 0 ? container_opt->get().anl_out : 1, 1));
     unsigned char *b = static_cast<unsigned char *>(calloc(container_opt->get().bin_out > 0 ? container_opt->get().bin_out : 1, 1));
 
-    std::printf("command=%s\t %d\n", cmd, container_opt->get().anl_out);
+    // std::printf("command=%s\t %d\n", cmd, container_opt->get().anl_out);
     int rangeCnt = ParseRange(cmd, rangeTable, sizeof(rangeTable) / sizeof(ParsedRange));
 
     if (rangeCnt == 0)
@@ -120,29 +121,389 @@ bool mik::db_handler::read(char *cmd, const std::optional<std::reference_wrapper
             {
                 if (range->isDigital)
                 {
+                    /* BINARY */
                     size_t lenCor = range->start + range->count <= container_opt->get().bin_out ? range->count : container_opt->get().bin_out - range->start;
                     for (idxI = range->start; idxI < lenCor + range->start; idxI++)
                     {
-                        bin_vect.push_back(bin{idxI, b[idxI]});
+                        bin_vec.push_back(bin{idxI, b[idxI]});
                     }
                 }
                 else
                 {
+                    /* ANALOG */
                     size_t lenCor = range->start + range->count <= container_opt->get().anl_out ? range->count : container_opt->get().anl_out - range->start;
+                    for (idxI = range->start; idxI < lenCor + range->start; idxI++)
+                    {
+                        //TODO: verify if float/int is properly assigned
+                        if (f[idxI] & 0x80)
+                        {
+                            analog_vec.push_back(analog{idxI, f[idxI], *(float *)&a[idxI]});
+                        }
+                        else
+                        {
+                            analog_vec.push_back(analog{idxI, f[idxI], *(int *)&a[idxI]});
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            /* BINARY */
+            for (size_t i = 0; i < container_opt->get().bin_out; i++)
+            {
+                bin_vec.push_back(bin{i, b[i]});
+            }
+
+            /* ANALOG */
+            for (size_t i = 0; i < container_opt->get().anl_out; i++)
+            {
+                // TODO: verify if float/int is properly assigned
+                if (f[i] & 0x80)
+                {
+                    analog_vec.push_back(analog{i, f[i], *(float *)&a[i]});
+                }
+                else
+                {
+                    analog_vec.push_back(analog{i, f[i], *(int *)&a[i]});
                 }
             }
         }
         
     }
-    
 
-
+    OATPP_LOGD("read", "gather data from database");
+    for (const auto &b : bin_vec)
+    {
+        OATPP_LOGD("read", "binary[idx:%d, state:%02x]", b.index, b.state);
+    }
+    for (const auto &a : analog_vec)
+    {
+        if (std::holds_alternative<int>(a.value))
+        {
+            OATPP_LOGD("read", "analog[idx:%d, state:%02x, value:%d]", a.index, a.state, a.value);
+        }
+        else
+        {
+            OATPP_LOGD("read", "analog[idx:%d, state:%02x, value:%.3f]", a.index, a.state, a.value);
+        }
+    }
 
     free(a);
     free(f);
     free(b);
 
     return true;
+}
+
+bool mik::db_handler::read2(char *cmd, const std::optional<std::reference_wrapper<const mik::container>> &container_opt, oatpp::Object<read> &read_dto)
+{
+
+    OATPP_LOGD("read", "command=%s\t chanel:%d\t bin:%d\t analog:%d\n", cmd, container_opt->get().channel, container_opt->get().bin_out, container_opt->get().anl_out);
+    unsigned int err = 0;
+
+    ParsedRange rangeTable[16];
+    // char *command = FindToEnd(query, "=");
+
+    long *a = static_cast<long *>(calloc(container_opt->get().anl_out > 0 ? container_opt->get().anl_out : 1, 4));
+    unsigned char *f = static_cast<unsigned char *>(calloc(container_opt->get().anl_out > 0 ? container_opt->get().anl_out : 1, 1));
+    unsigned char *b = static_cast<unsigned char *>(calloc(container_opt->get().bin_out > 0 ? container_opt->get().bin_out : 1, 1));
+
+    // std::printf("command=%s\t %d\n", cmd, container_opt->get().anl_out);
+    int rangeCnt = ParseRange(cmd, rangeTable, sizeof(rangeTable) / sizeof(ParsedRange));
+
+    if (rangeCnt == 0)
+    {
+        if (baza_a(container_opt->get().channel, 0, a, f, container_opt->get().anl_out) < 0 /*!= CFG.a*/)
+            err |= 1 << DB_ANALOG;
+        if (baza_b(container_opt->get().channel, 0, b, container_opt->get().bin_out) < 0)
+            err |= 1 << DB_BINARY;
+    }
+    else
+    {
+        int rngI = 0;
+        ParsedRange *range = rangeTable;
+        for (; rngI < rangeCnt; rngI++, range++)
+        {
+            if (range->isDigital)
+            {
+                size_t lenCor = range->start + range->count <= container_opt->get().bin_out ? range->count : container_opt->get().bin_out - range->start;
+                // print("Reading bin from %d to %d\n", range->start, range->start + lenCor);
+                if (baza_b(container_opt->get().channel, range->start, b + range->start, lenCor) < 0)
+                    err |= 1 << DB_BINARY;
+            }
+            else
+            {
+                size_t lenCor = range->start + range->count <= container_opt->get().anl_out ? range->count : container_opt->get().anl_out - range->start;
+                // print("Reading anl from %d to %d\n", range->start, range->start + lenCor);
+                if (baza_a(container_opt->get().channel, range->start, a + range->start, f + range->start, lenCor) < 0)
+                    err |= 1 << DB_ANALOG;
+            }
+        }
+    }
+
+    if (err)
+    {
+        free(a);
+        free(f);
+        free(b);
+        return false;
+    }
+    else
+    {
+        if (rangeCnt)
+        {
+            int rngI = 0, idxI = 0;
+            ParsedRange *range = rangeTable;
+            for (rngI = 0, range = rangeTable; rngI < rangeCnt; rngI++, range++)
+            {
+                if (range->isDigital)
+                {
+                    /* BINARY */
+                    size_t lenCor = range->start + range->count <= container_opt->get().bin_out ? range->count : container_opt->get().bin_out - range->start;
+                    for (idxI = range->start; idxI < lenCor + range->start; idxI++)
+                    {
+                        bin_vec.push_back(bin{idxI, b[idxI]});
+                    }
+                }
+                else
+                {
+                    /* ANALOG */
+                    size_t lenCor = range->start + range->count <= container_opt->get().anl_out ? range->count : container_opt->get().anl_out - range->start;
+                    for (idxI = range->start; idxI < lenCor + range->start; idxI++)
+                    {
+                        // TODO: verify if float/int is properly assigned
+                        if (f[idxI] & 0x80)
+                        {
+                            analog_vec.push_back(analog{idxI, f[idxI], *(float *)&a[idxI]});
+                        }
+                        else
+                        {
+                            analog_vec.push_back(analog{idxI, f[idxI], *(int *)&a[idxI]});
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            /* BINARY */
+            for (size_t i = 0; i < container_opt->get().bin_out; i++)
+            {
+                bin_vec.push_back(bin{i, b[i]});
+            }
+
+            /* ANALOG */
+            for (size_t i = 0; i < container_opt->get().anl_out; i++)
+            {
+                // TODO: verify if float/int is properly assigned
+                if (f[i] & 0x80)
+                {
+                    analog_vec.push_back(analog{i, f[i], *(float *)&a[i]});
+                }
+                else
+                {
+                    analog_vec.push_back(analog{i, f[i], *(int *)&a[i]});
+                }
+            }
+        }
+    }
+
+    OATPP_LOGD("read", "gather data from database");
+    for (const auto &b : bin_vec)
+    {
+        OATPP_LOGD("read", "binary[idx:%d, state:%02x]", b.index, b.state);
+    }
+    for (const auto &a : analog_vec)
+    {
+        if (std::holds_alternative<int>(a.value))
+        {
+            OATPP_LOGD("read", "analog[idx:%d, state:%02x, value:%d]", a.index, a.state, a.value);
+        }
+        else
+        {
+            OATPP_LOGD("read", "analog[idx:%d, state:%02x, value:%.3f]", a.index, a.state, a.value);
+        }
+    }
+
+    free(a);
+    free(f);
+    free(b);
+
+    return true;
+}
+
+int mik::db_handler::baza_setBin(const char *payload)
+{
+    // 248 (StanyMASTER)
+    char **paramsTable = NULL;
+    // char** parseEndPtr = NULL;
+    // char* paramsTablePtr = NULL;
+    int paramsTablePos = 0;
+    int rc = 0;
+    char *parseEndPtr = NULL;
+    StanyMASTER ustawStany;
+
+    memset(&ustawStany, 0, sizeof(ustawStany));
+
+    if (!payload)
+        return -1;
+    ustawStany.NumerKanalu = CFG.k;
+    ustawStany.TypObiektu = 248;
+
+    paramsTable = str_split(payload, ',');
+
+    if (paramsTable[paramsTablePos])
+    {
+        int idx = -1;
+        if (strtolError(paramsTable[paramsTablePos], &parseEndPtr, 10, &idx) || *parseEndPtr != 0)
+        {
+            rc = -1;
+            goto returning;
+        }
+        ustawStany.Indeks = idx;
+    }
+
+    while (ustawStany.LiczbaObiektow < 2048 && paramsTable[++paramsTablePos])
+    {
+        int flg = -1;
+        if (strtolError(paramsTable[paramsTablePos], &parseEndPtr, 0, &flg) || *parseEndPtr != 0)
+        {
+            rc = -1;
+            goto returning;
+        }
+        ustawStany.pStany[ustawStany.LiczbaObiektow] = flg;
+        std::printf("SETBIN index: %d, flag 0x%02X ", ustawStany.Indeks + ustawStany.LiczbaObiektow, ustawStany.pStany[ustawStany.LiczbaObiektow]);
+        ustawStany.LiczbaObiektow++;
+
+        /*print("StanyMASTER: \n\
+        \tustawStan.NumerKanalu = %d;\n\
+          \tustawStan.TypObiektu = %d;\n\
+          \tustawStan.LiczbaObiektow = %d;\n\
+        \tustawStan.Indeks = %d;\n\
+        \tustawStan.Flaga = %d;\n\
+        \tustawStan.CzasZmiany = %u\n",
+        ustawStany.NumerKanalu, ustawStany.TypObiektu, ustawStany.LiczbaObiektow, ustawStany.Indeks, ustawStany.Flaga, *((unsigned int*)ustawStany.CzasZmiany));*/
+        rc = baza_odczyt(&ustawStany) | (CFG.b < ustawStany.Indeks + ustawStany.LiczbaObiektow - 1);
+        std::printf("Returned: %d\n", rc);
+    }
+returning:
+    if (paramsTable)
+    {
+        for (paramsTablePos = 0; paramsTable[paramsTablePos] != NULL; paramsTablePos++)
+            free(paramsTable[paramsTablePos]);
+        free(paramsTable);
+    }
+    return rc;
+}
+
+int mik::db_handler::baza_setAnl(const char *payload)
+{
+    char **paramsTable = NULL;
+    char *parseEndPtr = NULL;
+    // char* paramsTablePtr = NULL;
+    int paramsTablePos = 0;
+    int rc = 0;
+    float valueF = -1;
+    TczasDNP tdnp;
+    PomiaryMASTER ustawPomiar;
+
+    getTdnp(tdnp);
+    memset(&ustawPomiar, 0, sizeof(ustawPomiar));
+
+    ustawPomiar.NumerKanalu = CFG.k;
+    ustawPomiar.TypObiektu = 99;
+    ustawPomiar.Wariacja = 0;
+    ustawPomiar.Kwalifikator = 0;
+
+    if (!payload)
+        return -1;
+    paramsTable = str_split(payload, ',');
+
+    if (paramsTable[paramsTablePos])
+    {
+        int idx = -1;
+        if (strtolError(paramsTable[paramsTablePos], &parseEndPtr, 10, &idx) || *parseEndPtr != 0)
+        {
+            rc = -1;
+            goto returning;
+        }
+        ustawPomiar.Indeks = idx;
+    }
+    while (ustawPomiar.LiczbaObiektow < 100 && paramsTable[++paramsTablePos])
+    {
+        int flg = -1;
+        if (strtolError(paramsTable[paramsTablePos], &parseEndPtr, 0, &flg) || *parseEndPtr != 0)
+        {
+            rc = -1;
+            goto returning;
+        }
+        if (!paramsTable[++paramsTablePos])
+        {
+            rc = -1;
+            goto returning;
+        }
+        ustawPomiar.pPomiary[ustawPomiar.LiczbaObiektow].Flaga = flg;
+
+        if (ustawPomiar.pPomiary[ustawPomiar.LiczbaObiektow].Flaga & 0x80)
+        {
+            if (!strtofError(paramsTable[paramsTablePos], &parseEndPtr, &valueF) && *parseEndPtr == 0)
+                ustawPomiar.pPomiary[ustawPomiar.LiczbaObiektow].Wartosc = *((k_ulong *)(&valueF));
+            else
+            {
+                rc = -1;
+                goto returning;
+            }
+        }
+        else
+        {
+            int val = -1;
+            if (strtolError(paramsTable[paramsTablePos], &parseEndPtr, 10, &val) || *parseEndPtr != 0)
+            {
+                rc = -1;
+                goto returning;
+            }
+            ustawPomiar.pPomiary[ustawPomiar.LiczbaObiektow].Wartosc = val;
+        }
+        memcpy(ustawPomiar.pPomiary[ustawPomiar.LiczbaObiektow].Czas, tdnp, sizeof(tdnp));
+        if (ustawPomiar.pPomiary[ustawPomiar.LiczbaObiektow].Flaga & 0x80)
+        {
+            print("SETANL index: %d, valuef: %f, flag 0x%02X \n", ustawPomiar.Indeks + ustawPomiar.LiczbaObiektow, valueF, ustawPomiar.pPomiary[ustawPomiar.LiczbaObiektow].Flaga);
+        }
+        else
+        {
+            print("SETANL index: %d, value: %d, flag 0x%02X \n", ustawPomiar.Indeks + ustawPomiar.LiczbaObiektow, (int)ustawPomiar.pPomiary[ustawPomiar.LiczbaObiektow].Wartosc, ustawPomiar.pPomiary[ustawPomiar.LiczbaObiektow].Flaga);
+        }
+
+        ustawPomiar.LiczbaObiektow++;
+    }
+
+    rc = baza_odczyt(&ustawPomiar) | (CFG.a < ustawPomiar.Indeks + ustawPomiar.LiczbaObiektow - 1);
+returning:
+    if (paramsTable)
+    {
+        for (paramsTablePos = 0; paramsTable[paramsTablePos] != NULL; paramsTablePos++)
+            free(paramsTable[paramsTablePos]);
+        free(paramsTable);
+    }
+    return rc;
+}
+
+int mik::db_handler::baza_c(int k, int i)
+{
+    Control_Data D;
+    D.MasterNum = k;
+    D.Type = 0;
+    D.ControlIndex = i;
+    D.ParamNum = 0;
+    memset(D.Param, 0x00, 11);
+    int rc = baza_weryfikacja(&D);
+    /*if (rc)*/ std::printf("[%s] CTRL k:%d i:%d %d,%d rc=%d\n", __FUNCTION__, k, i, D.Param[0], D.Param[1], rc);
+    if (rc)
+        rc = 0xffff;
+    else
+        rc = D.Param[1] | (D.Param[0] << 8);
+    return rc;
 }
 
 int mik::db_handler::baza_b(int chnlNo, int index, unsigned char *tableReadBin, int len)
