@@ -196,9 +196,8 @@ bool mik::db_handler::read(char *cmd, const std::optional<std::reference_wrapper
     return true;
 }
 
-bool mik::db_handler::read2(char *cmd, const std::optional<std::reference_wrapper<const mik::container>> &container_opt, oatpp::Object<read> &read_dto)
+bool mik::db_handler::read2(char *cmd, const std::optional<std::reference_wrapper<const mik::container>> &container_opt, oatpp::Object<read_dto> &dto)
 {
-
     OATPP_LOGD("read", "command=%s\t chanel:%d\t bin:%d\t analog:%d\n", cmd, container_opt->get().channel, container_opt->get().bin_out, container_opt->get().anl_out);
     unsigned int err = 0;
 
@@ -263,7 +262,14 @@ bool mik::db_handler::read2(char *cmd, const std::optional<std::reference_wrappe
                     size_t lenCor = range->start + range->count <= container_opt->get().bin_out ? range->count : container_opt->get().bin_out - range->start;
                     for (idxI = range->start; idxI < lenCor + range->start; idxI++)
                     {
-                        bin_vec.push_back(bin{idxI, b[idxI]});
+                        auto new_bin = bin_dto::createShared();
+                        new_bin->index = idxI;
+                        new_bin->state = b[idxI];
+                        dto->bins->push_back(new_bin);
+
+                        dto.get()->bins.get()->push_back()
+                        dto.get()->bins.get()->push_back(bin_dto{idxI, b[idxI]});
+                        
                     }
                 }
                 else

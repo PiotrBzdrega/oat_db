@@ -36,20 +36,20 @@ class token_dto : public oatpp::DTO
     DTO_FIELD(String, token);
 };
 
-class bin : public oatpp::DTO
+class bin_dto : public oatpp::DTO
 {
     /* binary:[{index:0,state:0x80},{index:1,state:0x81}] */
-    DTO_INIT(bin, DTO)
+    DTO_INIT(bin_dto, DTO)
 
     DTO_FIELD(Int16, index);
 
     DTO_FIELD(Int8, state); // TODO: must be print in hex 02X
 };
 
-class analog : public oatpp::DTO
+class analog_dto : public oatpp::DTO
 {
 
-    DTO_INIT(analog, DTO)
+    DTO_INIT(analog_dto, DTO)
 
     DTO_FIELD(Int16, index);
 
@@ -58,13 +58,13 @@ class analog : public oatpp::DTO
     DTO_FIELD(Float32, value); // TODO: must be print in hex 02X
 };
 
-class read : public oatpp::DTO
+class read_dto : public oatpp::DTO
 {
 
-    DTO_INIT(read, DTO)
+    DTO_INIT(read_dto, DTO)
 
-    DTO_FIELD(Fields<List<Object<bin>>>, bins);
-    DTO_FIELD(Fields<List<Object<analog>>>, analogs);
+    DTO_FIELD(Fields<List<Object<bin_dto>>>, bins);
+    DTO_FIELD(Fields<List<Object<analog_dto>>>, analogs);
 
     DTO_FIELD(String, info);
 };

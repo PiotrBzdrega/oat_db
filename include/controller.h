@@ -81,7 +81,7 @@ public:
         char *query = strdup(content->c_str());
         mik::db_handler::read(query, container_ref, mik_bin, mik_analog);
 
-        auto read_dto = read::createShared();
+        auto read_dto = read_dto::createShared();
 
         mik::db_handler::read2(query, container_ref, read_dto);
 

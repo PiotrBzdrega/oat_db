@@ -34,7 +34,7 @@ namespace mik
         static int get_channel(std::string_view token);
         static std::optional<std::reference_wrapper<const mik::container>> get_container_ref(std::string_view token);
         static bool read(char *cmd, const std::optional<std::reference_wrapper<const mik::container>> &container_opt, std::vector<bin> &bin_vect, std::vector<analog> &analog_vect);
-        static bool read2(char *cmd, const std::optional<std::reference_wrapper<const mik::container>> &container_opt, oatpp::Object<bin> &bin_dto, oatpp::Object<analog> &analog_dto);
+        static bool read2(char *cmd, const std::optional<std::reference_wrapper<const mik::container>> &container_opt, oatpp::Object<read_dto> &dto);
         static bool ctrl_bin(char *cmd, const std::optional<std::reference_wrapper<const mik::container>> &container_opt);
         static bool ctrl_analog(char *cmd, const std::optional<std::reference_wrapper<const mik::container>> &container_opt);
         static bool set_bin(char *cmd, const std::optional<std::reference_wrapper<const mik::container>> &container_opt);
